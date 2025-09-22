@@ -1,0 +1,48 @@
+export enum ErrorEnum {
+  DEFAULT = '0:Unknown error',
+  SERVER_ERROR = '500:Server is busy, please try again later',
+
+  SYSTEM_USER_EXISTS = '1001:System user already exists',
+  INVALID_VERIFICATION_CODE = '1002:Invalid verification code',
+  INVALID_USERNAME_PASSWORD = '1003:Invalid username or password',
+  NODE_ROUTE_EXISTS = '1004:Node route already exists',
+  PERMISSION_REQUIRES_PARENT = '1005:Permission must include parent node',
+  ILLEGAL_OPERATION_DIRECTORY_PARENT = '1006:Illegal operation: This node only supports directory type parent node',
+  ILLEGAL_OPERATION_CANNOT_CONVERT_NODE_TYPE = '1007:Illegal operation: Node type cannot be directly converted',
+  ROLE_HAS_ASSOCIATED_USERS = '1008:This role has associated users, please delete associated users first',
+  DEPARTMENT_HAS_ASSOCIATED_USERS = '1009:This department has associated users, please delete associated users first',
+  DEPARTMENT_HAS_ASSOCIATED_ROLES = '1010:This department has associated roles, please delete associated roles first',
+  PASSWORD_MISMATCH = '1011:Old password does not match the original password',
+  LOGOUT_OWN_SESSION = '1012:To log out yourself, you can exit from the top right corner',
+  NOT_ALLOWED_TO_LOGOUT_USER = '1013:Not allowed to log out this user',
+  PARENT_MENU_NOT_FOUND = '1014:Parent menu does not exist',
+  DEPARTMENT_HAS_CHILD_DEPARTMENTS = '1015:This department has child departments, please delete child departments first',
+  SYSTEM_BUILTIN_FUNCTION_NOT_ALLOWED = '1016:System built-in functions are not allowed to operate',
+  USER_NOT_FOUND = '1017:User does not exist',
+  UNABLE_TO_FIND_DEPARTMENT_FOR_USER = '1018:Unable to find the department for the current user',
+  DEPARTMENT_NOT_FOUND = '1019:Department does not exist',
+  PARAMETER_CONFIG_KEY_EXISTS = '1022:Parameter configuration key-value pair already exists',
+  DEFAULT_ROLE_NOT_FOUND = '1023:The assigned default role does not exist',
+
+  INVALID_LOGIN = '1101:Invalid login, please log in again',
+  NO_PERMISSION = '1102:No permission to access',
+  ONLY_ADMIN_CAN_LOGIN = '1103:Not an administrator, unable to log in',
+  REQUEST_INVALIDATED = '1104:The current request has expired',
+  ACCOUNT_LOGGED_IN_ELSEWHERE = '1105:Your account has been logged in elsewhere',
+  GUEST_ACCOUNT_RESTRICTED_OPERATION = '1106:Guest account is not allowed to operate',
+  REQUESTED_RESOURCE_NOT_FOUND = '1107:Requested resource does not exist',
+
+  TOO_MANY_REQUESTS = '1201:Too many requests, please try again in a minute',
+  MAXIMUM_FIVE_VERIFICATION_CODES_PER_DAY = '1202:A maximum of 5 verification codes can be sent per day',
+  VERIFICATION_CODE_SEND_FAILED = '1203:Verification code sending failed',
+
+  INSECURE_MISSION = '1301:Insecure mission, ensure the execution is annotated with @Mission',
+  EXECUTED_MISSION_NOT_FOUND = '1302:Executed mission does not exist',
+  MISSION_EXECUTION_FAILED = '1303:Mission execution failed',
+  MISSION_NOT_FOUND = '1304:Mission does not exist',
+
+  // OSS related
+  OSS_FILE_OR_DIR_EXIST = '1401:The file or directory being created already exists',
+  OSS_NO_OPERATION_REQUIRED = '1402:No operation required',
+  OSS_EXCEE_MAXIMUM_QUANTITY = '1403:Exceeded the maximum supported processing quantity',
+}
