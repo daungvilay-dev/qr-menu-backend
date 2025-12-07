@@ -16,6 +16,7 @@ import { UserDto, UserUpdateDto, UserQueryDto } from './dto/user.dto';
 import { UserEntity } from './user.entity';
 import { AccountInfo } from './user.model';
 import { md5, randomValue } from '~/utils';
+import { RoleEntity } from '../role/role.entity';
 
 @Injectable()
 export class UserService {
@@ -23,6 +24,8 @@ export class UserService {
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
     @InjectEntityManager() private entityManager: EntityManager,
+    @InjectRepository(RoleEntity)
+    private readonly roleRepository: Repository<RoleEntity>,
   ) {}
 
   async findUserById(id: number): Promise<UserEntity | undefined> {
@@ -116,7 +119,12 @@ export class UserService {
   /**
    * Add system user, if false is returned, it means the user already exists
    */
-  async create({ username, password, ...data }: UserDto): Promise<void> {
+  async create({
+    username,
+    password,
+    roleIds,
+    ...data
+  }: UserDto): Promise<void> {
     const exists = await this.userRepository.findOneBy({
       username,
     });
@@ -133,6 +141,7 @@ export class UserService {
         psalt: salt,
         password,
         ...data,
+        roles: await this.roleRepository.findBy({ id: In(roleIds) }),
       });
 
       const result = await manager.save(u);
@@ -145,7 +154,7 @@ export class UserService {
    */
   async update(
     id: number,
-    { password, status, ...data }: UserUpdateDto,
+    { password, status, roleIds, ...data }: UserUpdateDto,
   ): Promise<void> {
     return await this.entityManager.transaction(async (manager) => {
       if (password) await this.forceUpdatePassword(id, password);
@@ -157,8 +166,16 @@ export class UserService {
 
       const user = await this.userRepository
         .createQueryBuilder('user')
+        .leftJoinAndSelect('user.roles', 'roles')
         .where('user.id = :id', { id })
         .getOne();
+      if (roleIds) {
+        await manager
+          .createQueryBuilder()
+          .relation(UserEntity, 'roles')
+          .of(id)
+          .addAndRemove(roleIds, user.roles);
+      }
     });
   }
 
@@ -178,9 +195,9 @@ export class UserService {
     return user;
   }
   async delete(userIds: number[]): Promise<void | never> {
-    // const rootUserId = await this.findRootUserId();
-    // if (userIds.includes(rootUserId))
-    //   throw new BadRequestException('Cannot delete root user!');
+    const rootUserId = await this.findRootUserId();
+    if (userIds.includes(rootUserId))
+      throw new BadRequestException('Cannot delete root user!');
 
     await this.userRepository.delete(userIds);
   }
@@ -196,13 +213,16 @@ export class UserService {
     email,
     status,
   }: UserQueryDto): Promise<Pagination<UserEntity>> {
-    const queryBuilder = this.userRepository.createQueryBuilder('user').where({
-      ...(username ? { username: Like(`%${username}%`) } : null),
-      ...(nickname ? { nickname: Like(`%${nickname}%`) } : null),
-      ...(remark ? { remark: Like(`%${remark}%`) } : null),
-      ...(email ? { email: Like(`%${email}%`) } : null),
-      ...(!isNil(status) ? { status } : null),
-    });
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.roles', 'role')
+      .where({
+        ...(username ? { username: Like(`%${username}%`) } : null),
+        ...(nickname ? { nickname: Like(`%${nickname}%`) } : null),
+        ...(remark ? { remark: Like(`%${remark}%`) } : null),
+        ...(email ? { email: Like(`%${email}%`) } : null),
+        ...(!isNil(status) ? { status } : null),
+      });
     return paginate<UserEntity>(queryBuilder, {
       page,
       limit,
@@ -211,12 +231,12 @@ export class UserService {
   /**
    * Find super admin user ID
    */
-  // async findRootUserId(): Promise<number> {
-  //   const user = await this.userRepository.findOneBy({
-  //     roles: { id: ROOT_ROLE_ID },
-  //   });
-  //   return user.id;
-  // }
+  async findRootUserId(): Promise<number> {
+    const user = await this.userRepository.findOneBy({
+      roles: { id: ROOT_ROLE_ID },
+    });
+    return user.id;
+  }
 
   /**
    * Check if username exists

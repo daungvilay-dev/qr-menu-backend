@@ -36,11 +36,11 @@ export class UserDto {
   })
   password: string;
 
-  // @ApiProperty({ description: 'Role IDs', type: [Number] })
-  // @ArrayNotEmpty()
-  // @ArrayMinSize(1)
-  // @ArrayMaxSize(3)
-  // roleIds: number[];
+  @ApiProperty({ description: 'Role IDs', type: [Number] })
+  @ArrayNotEmpty()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(3)
+  roleIds: number[];
 
   @ApiProperty({ description: 'Nickname', example: 'admin' })
   @IsOptional()

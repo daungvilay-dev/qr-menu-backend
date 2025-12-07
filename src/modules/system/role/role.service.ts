@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { isEmpty, isNil } from 'lodash';
 import { EntityManager, In, Like, Repository } from 'typeorm';
@@ -12,12 +12,16 @@ import { RoleEntity } from '~/modules/system/role/role.entity';
 import { RoleDto, RoleQueryDto, RoleUpdateDto } from './role.dto';
 
 @Injectable()
-export class RoleService {
+export class RoleService implements OnModuleInit {
   constructor(
     @InjectRepository(RoleEntity)
     private roleRepository: Repository<RoleEntity>,
     @InjectEntityManager() private entityManager: EntityManager,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    await this.seedDefaultRoles();
+  }
 
   /**
    * List all roles: excluding super administrator
@@ -146,5 +150,57 @@ export class RoleService {
         },
       },
     });
+  }
+
+  /**
+   * Seed the initial roles needed by the application.
+   */
+  private async seedDefaultRoles(): Promise<void> {
+    const defaults: Partial<RoleEntity>[] = [
+      {
+        name: 'Super Admin',
+        value: 'super_admin',
+        remark: 'Platform super administrator',
+        status: 1,
+      },
+      {
+        name: 'Restaurant Owner',
+        value: 'restaurant_owner',
+        remark: 'Restaurant owner or administrator',
+        status: 1,
+      },
+      {
+        name: 'Restaurant Manager',
+        value: 'restaurant_manager',
+        remark: 'Manages restaurant operations',
+        status: 1,
+      },
+      {
+        name: 'Guest',
+        value: 'guest',
+        remark: 'Guest account with limited access',
+        status: 1,
+        default: true,
+      },
+    ];
+
+    const existing = await this.roleRepository.find({
+      where: { value: In(defaults.map((role) => role.value)) },
+    });
+
+    const existingValues = new Set(existing.map((role) => role.value));
+    const missing = defaults.filter(
+      (role) => !existingValues.has(role.value),
+    );
+    if (!missing.length) return;
+
+    // Ensure super admin is inserted first so it keeps the expected ROOT_ROLE_ID on a fresh database.
+    const orderedMissing = missing.sort((a, b) => {
+      if (a.value === 'super_admin') return -1;
+      if (b.value === 'super_admin') return 1;
+      return 0;
+    });
+
+    await this.roleRepository.save(orderedMissing);
   }
 }
