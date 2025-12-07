@@ -19,7 +19,7 @@ export class RoleEntity extends CompleteEntity {
   @ApiProperty({ description: 'Role Description' })
   remark: string;
 
-  @Column({ type: 'tinyint', nullable: true, default: 1 })
+  @Column({ type: 'int', nullable: true, default: 1 })
   @ApiProperty({ description: 'Status: 1 Enabled, 0 Disabled' })
   status: number;
 
