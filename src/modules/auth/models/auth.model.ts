@@ -1,5 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-export class LoginToken {
-  @ApiProperty({ description: 'JWT Identity Token' })
-  token: string;
+export class AuthTokens {
+  @ApiProperty({ description: 'Access token (JWT)' })
+  accessToken: string;
+
+  @ApiProperty({ description: 'Refresh token' })
+  refreshToken: string;
 }

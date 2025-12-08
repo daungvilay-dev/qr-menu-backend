@@ -27,6 +27,7 @@ import { md5 } from '~/utils';
 import { RoleService } from '../system/role/role.service';
 
 import { TokenService } from './services/token.service';
+import { AuthTokens } from './models/auth.model';
 
 @Injectable()
 export class AuthService {
@@ -60,7 +61,7 @@ export class AuthService {
    * Get login JWT
    * If null is returned, the account and password are incorrect and the user does not exist
    */
-  async login(username: string, password: string): Promise<string> {
+  async login(username: string, password: string): Promise<AuthTokens> {
     console.log(username);
     const user = await this.userService.findUserByUserName(username);
     console.log('user', user);
@@ -91,7 +92,23 @@ export class AuthService {
     // Set the password version number. When the password is changed, the version number is increased by 1.
     await this.redis.set(genAuthPVKey(user.id), 1);
 
-    return token.accessToken;
+    return token;
+  }
+
+  async refresh(refreshTokenValue: string): Promise<AuthTokens> {
+    const res =
+      await this.tokenService.refreshByRefreshToken(refreshTokenValue);
+
+    if (!res) throw new BusinessException(ErrorEnum.INVALID_LOGIN);
+
+    await this.redis.set(
+      genAuthTokenKey(res.userId),
+      res.tokens.accessToken,
+      'EX',
+      this.securityConfig.jwtExprire,
+    );
+
+    return res.tokens;
   }
 
   /**

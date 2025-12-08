@@ -57,7 +57,8 @@ export class JwtAuthGuard extends AuthGuard(AuthStrategy.JWT) {
       .switchToHttp()
       .getRequest<FastifyRequest<RequestType>>();
     // const response = context.switchToHttp().getResponse<FastifyReply>()
-    if (RouterWhiteList.includes(request.routeOptions.url)) return true;
+    const routeUrl = request.routeOptions?.url;
+    if (routeUrl && RouterWhiteList.includes(routeUrl)) return true;
 
     const isSse = request.headers.accept === 'text/event-stream';
 

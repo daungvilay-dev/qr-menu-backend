@@ -13,6 +13,7 @@ import { generateUUID } from '~/utils';
 
 import { AccessTokenEntity } from '../entities/access-token.entity';
 import { RefreshTokenEntity } from '../entities/refresh-token.entity';
+import { AuthTokens } from '../models/auth.model';
 
 /**
  * Token service
@@ -54,6 +55,34 @@ export class TokenService {
     const jwtSign = this.jwtService.sign(payload);
 
     return jwtSign;
+  }
+
+  /**
+   * Refresh by refresh token value
+   */
+  async refreshByRefreshToken(
+    refreshTokenValue: string,
+  ): Promise<{ tokens: AuthTokens; userId: number } | null> {
+    try {
+      await this.jwtService.verifyAsync(refreshTokenValue, {
+        secret: this.securityConfig.refreshSecret,
+      });
+    } catch (error) {
+      return null;
+    }
+
+    const refreshToken = await RefreshTokenEntity.findOne({
+      where: { value: refreshTokenValue },
+      relations: ['accessToken', 'accessToken.user', 'accessToken.refreshToken'],
+    });
+
+    if (!refreshToken || !refreshToken.accessToken) return null;
+
+    const tokens = await this.refreshToken(refreshToken.accessToken);
+
+    if (!tokens) return null;
+
+    return { tokens, userId: refreshToken.accessToken.user.id };
   }
 
   async generateAccessToken(uid: number, roles: string[] = []) {

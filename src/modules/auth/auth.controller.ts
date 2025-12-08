@@ -4,9 +4,9 @@ import { ApiResult } from '~/common/decorators/api-result.decorator';
 import { UserService } from '~/modules/system/user/user.service';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { LoginDto, RefreshTokenDto, RegisterDto } from './dto/auth.dto';
 import { LocalGuard } from './guards/local.guard';
-import { LoginToken } from './models/auth.model';
+import { AuthTokens } from './models/auth.model';
 
 @ApiTags('Auth - Authentication module')
 @UseGuards(LocalGuard)
@@ -20,14 +20,21 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({ summary: 'Log in' })
-  @ApiResult({ type: LoginToken })
+  @ApiResult({ type: AuthTokens })
   async login(
     @Body() dto: LoginDto,
     @Headers('user-agent') ua: string,
-  ): Promise<LoginToken> {
+  ): Promise<AuthTokens> {
     // If it is not a development environment, verify the picture verification code
     const token = await this.authService.login(dto.username, dto.password);
-    return { token };
+    return token;
+  }
+
+  @Post('refresh')
+  @ApiOperation({ summary: 'Refresh tokens' })
+  @ApiResult({ type: AuthTokens })
+  async refresh(@Body() dto: RefreshTokenDto): Promise<AuthTokens> {
+    return this.authService.refresh(dto.refreshToken);
   }
 
   @Post('register')

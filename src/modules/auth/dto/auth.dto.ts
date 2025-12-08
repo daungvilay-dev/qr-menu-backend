@@ -15,6 +15,12 @@ export class LoginDto {
   password: string;
 }
 
+export class RefreshTokenDto {
+  @ApiProperty({ description: 'Refresh token' })
+  @IsString()
+  refreshToken: string;
+}
+
 export class RegisterDto {
   @ApiProperty({ description: 'Account' })
   @IsString()
