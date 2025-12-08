@@ -23,9 +23,8 @@ export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
-    @InjectEntityManager() private entityManager: EntityManager,
-    @InjectRepository(RoleEntity)
-    private readonly roleRepository: Repository<RoleEntity>,
+    @InjectEntityManager()
+    private entityManager: EntityManager,
   ) {}
 
   async findUserById(id: number): Promise<UserEntity | undefined> {
@@ -134,8 +133,8 @@ export class UserService {
 
     await this.entityManager.transaction(async (manager) => {
       const salt = randomValue(32);
-
-      password = md5(`${password ?? '123456'}`);
+      password = md5(`${password ?? '123456'}${salt}`);
+      console.log(password);
       const u = manager.create(UserEntity, {
         username,
         psalt: salt,
