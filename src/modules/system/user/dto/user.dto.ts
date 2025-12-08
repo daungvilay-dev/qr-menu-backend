@@ -17,11 +17,6 @@ import {
 } from 'class-validator';
 import { isEmpty } from 'lodash';
 export class UserDto {
-  @ApiProperty({ description: 'Avatar' })
-  @IsOptional()
-  @IsString()
-  avatar?: string;
-
   @ApiProperty({ description: 'Login account', example: 'admin' })
   @IsString()
   @Matches(/^[\s\S]+$/)
