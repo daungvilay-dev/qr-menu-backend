@@ -61,11 +61,16 @@ export class AuthService {
    * If null is returned, the account and password are incorrect and the user does not exist
    */
   async login(username: string, password: string): Promise<string> {
+    console.log(username);
     const user = await this.userService.findUserByUserName(username);
+    console.log('user', user);
     if (isEmpty(user))
       throw new BusinessException(ErrorEnum.INVALID_USERNAME_PASSWORD);
 
     const comparePassword = md5(`${password}${user.psalt}`);
+    console.log(user.password);
+
+    console.log(comparePassword);
     if (user.password !== comparePassword)
       throw new BusinessException(ErrorEnum.INVALID_USERNAME_PASSWORD);
 

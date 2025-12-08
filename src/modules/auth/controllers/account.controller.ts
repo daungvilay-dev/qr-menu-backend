@@ -53,21 +53,13 @@ export class AccountController {
     await this.authService.clearLoginStatus(user, req.accessToken);
   }
 
-  @Get('menus')
-  @ApiOperation({ summary: 'Get the menu list' })
-  @ApiResult({ type: [AccountMenus] })
-  @AllowAnon()
-  async menu(@AuthUser() user: IAuthUser) {
-    return this.authService.getMenus(user.uid);
-  }
-
-  @Get('permissions')
-  @ApiOperation({ summary: 'Get permission list' })
-  @ApiResult({ type: [String] })
-  @AllowAnon()
-  async permissions(@AuthUser() user: IAuthUser): Promise<string[]> {
-    return this.authService.getPermissions(user.uid);
-  }
+  // @Get('permissions')
+  // @ApiOperation({ summary: 'Get permission list' })
+  // @ApiResult({ type: [String] })
+  // @AllowAnon()
+  // async permissions(@AuthUser() user: IAuthUser): Promise<string[]> {
+  //   return this.authService.getPermissions(user.uid);
+  // }
 
   @Put('update')
   @ApiOperation({ summary: 'Change Account Details' })

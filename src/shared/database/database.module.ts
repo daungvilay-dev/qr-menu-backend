@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 
 import { ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
+import { ClsModule } from 'nestjs-cls'
 
 import { DataSource, LoggerOptions } from 'typeorm'
 
@@ -17,6 +18,9 @@ const providers = [EntityExistConstraint, UniqueConstraint]
 
 @Module({
   imports: [
+    ClsModule.forRoot({
+      middleware: { mount: true },
+    }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService<ConfigKeyPaths>) => {
