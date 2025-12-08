@@ -6,21 +6,12 @@ import { AppService } from './app.service';
 import { RoleModule } from './modules/system/role/role.module';
 import { UserModule } from './modules/system/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
-
+import { DatabaseModule } from './shared/database/database.module';
 @Module({
   imports: [
     // ConfigModule.forRoot({ isGlobal: true }),
+    DatabaseModule,
 
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'root',
-      password: '11111111',
-      database: 'qrmenu',
-      autoLoadEntities: true,
-      synchronize: true,
-    }),
     RoleModule,
     UserModule,
     AuthModule,

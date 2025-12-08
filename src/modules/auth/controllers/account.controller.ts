@@ -21,7 +21,7 @@ import { PasswordUpdateDto } from '~/modules/system/user/dto/password.dto';
 import { AccountInfo } from '~/modules/system/user/user.model';
 import { UserService } from '~/modules/system/user/user.service';
 import { AuthService } from '../auth.service';
-import { AccountMenus, AccountUpdateDto } from '../dto/account.dto';
+import { AccountUpdateDto } from '../dto/account.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 
 @ApiTags('Account - Account Module')

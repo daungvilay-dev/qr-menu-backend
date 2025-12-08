@@ -1,8 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import dayjs from 'dayjs';
+import Redis from 'ioredis';
+
+import { InjectRedis } from '~/common/decorators/inject-redis.decorator';
 
 import { ISecurityConfig, SecurityConfig } from '~/config';
+import { genOnlineUserKey } from '~/helper/genRedisKey';
 import { RoleService } from '~/modules/system/role/role.service';
 import { UserEntity } from '~/modules/system/user/user.entity';
 import { generateUUID } from '~/utils';
@@ -18,6 +22,7 @@ export class TokenService {
   constructor(
     private jwtService: JwtService,
     private roleService: RoleService,
+    @InjectRedis() private redis: Redis,
     @Inject(SecurityConfig.KEY) private securityConfig: ISecurityConfig,
   ) {}
 
@@ -139,6 +144,7 @@ export class TokenService {
       where: { value },
     });
     if (accessToken) {
+      this.redis.del(genOnlineUserKey(accessToken.id));
       await accessToken.remove();
     }
   }
@@ -153,6 +159,8 @@ export class TokenService {
       relations: ['accessToken'],
     });
     if (refreshToken) {
+      if (refreshToken.accessToken)
+        this.redis.del(genOnlineUserKey(refreshToken.accessToken.id));
       await refreshToken.accessToken.remove();
       await refreshToken.remove();
     }

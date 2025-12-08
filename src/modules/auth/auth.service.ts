@@ -12,7 +12,7 @@ import {
   ISecurityConfig,
   SecurityConfig,
 } from '~/config';
-import { ErrorEnum } from '~/constants/error-code.constant';
+import { ErrorEnum } from '~/common/constants/error-code.constant';
 import {
   genAuthPermKey,
   genAuthPVKey,
@@ -20,12 +20,10 @@ import {
   genTokenBlacklistKey,
 } from '~/helper/genRedisKey';
 
-import { UserService } from '~/modules/user/user.service';
+import { UserService } from '~/modules/system/user/user.service';
 
 import { md5 } from '~/utils';
 
-import { LoginLogService } from '../system/log/services/login-log.service';
-import { MenuService } from '../system/menu/menu.service';
 import { RoleService } from '../system/role/role.service';
 
 import { TokenService } from './services/token.service';
@@ -34,10 +32,8 @@ import { TokenService } from './services/token.service';
 export class AuthService {
   constructor(
     @InjectRedis() private readonly redis: Redis,
-    private menuService: MenuService,
     private roleService: RoleService,
     private userService: UserService,
-    private loginLogService: LoginLogService,
     private tokenService: TokenService,
     @Inject(SecurityConfig.KEY) private securityConfig: ISecurityConfig,
     @Inject(AppConfig.KEY) private appConfig: IAppConfig,
@@ -64,7 +60,7 @@ export class AuthService {
    * Get login JWT
    * If null is returned, the account and password are incorrect and the user does not exist
    */
-  async login(username: string, password: string, ua: string): Promise<string> {
+  async login(username: string, password: string): Promise<string> {
     const user = await this.userService.findUserByUserName(username);
     if (isEmpty(user))
       throw new BusinessException(ErrorEnum.INVALID_USERNAME_PASSWORD);
@@ -90,12 +86,6 @@ export class AuthService {
     // Set the password version number. When the password is changed, the version number is increased by 1.
     await this.redis.set(genAuthPVKey(user.id), 1);
 
-    // Set menu permissions
-    const permissions = await this.menuService.getPermissions(user.id);
-    await this.setPermissionsCache(user.id, permissions);
-
-    await this.loginLogService.create(user.id, ua);
-
     return token.accessToken;
   }
 
@@ -108,10 +98,6 @@ export class AuthService {
     const comparePassword = md5(`${password}${user.psalt}`);
     if (user.password !== comparePassword)
       throw new BusinessException(ErrorEnum.INVALID_USERNAME_PASSWORD);
-  }
-
-  async loginLog(uid: number, ip: string, ua: string) {
-    await this.loginLogService.create(uid, ip, ua);
   }
 
   /**
@@ -139,20 +125,6 @@ export class AuthService {
     if (this.appConfig.multiDeviceLogin)
       await this.tokenService.removeAccessToken(accessToken);
     else await this.userService.forbidden(user.uid, accessToken);
-  }
-
-  /**
-   * Get the menu list
-   */
-  async getMenus(uid: number) {
-    return this.menuService.getMenus(uid);
-  }
-
-  /**
-   * Get permission list
-   */
-  async getPermissions(uid: number): Promise<string[]> {
-    return this.menuService.getPermissions(uid);
   }
 
   async getPermissionsCache(uid: number): Promise<string[]> {

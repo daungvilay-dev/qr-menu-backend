@@ -23,11 +23,10 @@ export class AuthController {
   @ApiResult({ type: LoginToken })
   async login(
     @Body() dto: LoginDto,
-    @Ip() ip: string,
     @Headers('user-agent') ua: string,
   ): Promise<LoginToken> {
     // If it is not a development environment, verify the picture verification code
-    const token = await this.authService.login(dto.username, dto.password, ua);
+    const token = await this.authService.login(dto.username, dto.password);
     return { token };
   }
 

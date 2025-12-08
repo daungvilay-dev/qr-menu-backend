@@ -7,20 +7,32 @@ import {
   ROOT_ROLE_ID,
   SYS_USER_INITPASSWORD,
 } from '~/common/constants/system.constant';
+import Redis from 'ioredis';
+import { InjectRedis } from '~/common/decorators/inject-redis.decorator';
 import { BusinessException } from '~/common/exceptions/biz.exception';
 import { paginate } from '~/helper/paginate';
 import { Pagination } from '~/helper/paginate/pagination';
 import { UserStatus } from './constant';
 import { PasswordUpdateDto } from './dto/password.dto';
+import { AccessTokenEntity } from '~/modules/auth/entities/access-token.entity';
 import { UserDto, UserUpdateDto, UserQueryDto } from './dto/user.dto';
+import { RegisterDto } from '~/modules/auth/dto/auth.dto';
 import { UserEntity } from './user.entity';
 import { AccountInfo } from './user.model';
 import { md5, randomValue } from '~/utils';
 import { RoleEntity } from '../role/role.entity';
 import { AccountUpdateDto } from '~/modules/auth/dto/account.dto';
+import {
+  genAuthPermKey,
+  genAuthPVKey,
+  genAuthTokenKey,
+  genOnlineUserKey,
+} from '~/helper/genRedisKey';
 @Injectable()
 export class UserService {
   constructor(
+    @InjectRedis()
+    private readonly redis: Redis,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
     @InjectEntityManager() private entityManager: EntityManager,
@@ -240,6 +252,40 @@ export class UserService {
   }
 
   /**
+   * Disable user
+   */
+  async forbidden(uid: number, accessToken?: string): Promise<void> {
+    await this.redis.del(genAuthPVKey(uid));
+    await this.redis.del(genAuthTokenKey(uid));
+    await this.redis.del(genAuthPermKey(uid));
+    if (accessToken) {
+      const token = await AccessTokenEntity.findOne({
+        where: { value: accessToken },
+      });
+      this.redis.del(genOnlineUserKey(token.id));
+    }
+  }
+
+  /**
+   * Disable multiple users
+   */
+  async multiForbidden(uids: number[]): Promise<void> {
+    if (uids) {
+      const pvs: string[] = [];
+      const ts: string[] = [];
+      const ps: string[] = [];
+      uids.forEach((uid) => {
+        pvs.push(genAuthPVKey(uid));
+        ts.push(genAuthTokenKey(uid));
+        ps.push(genAuthPermKey(uid));
+      });
+      await this.redis.del(pvs);
+      await this.redis.del(ts);
+      await this.redis.del(ps);
+    }
+  }
+
+  /**
    * Check if username exists
    */
   async exist(username: string) {
@@ -247,5 +293,33 @@ export class UserService {
     if (isNil(user)) throw new BusinessException(ErrorEnum.SYSTEM_USER_EXISTS);
 
     return true;
+  }
+
+  /**
+   * Register
+   */
+  async register({ username, ...data }: RegisterDto): Promise<void> {
+    const exists = await this.userRepository.findOneBy({
+      username,
+    });
+    if (!isEmpty(exists))
+      throw new BusinessException(ErrorEnum.SYSTEM_USER_EXISTS);
+
+    await this.entityManager.transaction(async (manager) => {
+      const salt = randomValue(32);
+
+      const password = md5(`${data.password ?? 'a123456'}${salt}`);
+
+      const u = manager.create(UserEntity, {
+        username,
+        password,
+        status: 1,
+        psalt: salt,
+      });
+
+      const user = await manager.save(u);
+
+      return user;
+    });
   }
 }
