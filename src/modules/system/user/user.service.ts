@@ -23,8 +23,9 @@ export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
-    @InjectEntityManager()
-    private entityManager: EntityManager,
+    @InjectEntityManager() private entityManager: EntityManager,
+    @InjectRepository(RoleEntity)
+    private readonly roleRepository: Repository<RoleEntity>,
   ) {}
 
   async findUserById(id: number): Promise<UserEntity | undefined> {
