@@ -17,7 +17,7 @@ import { UserEntity } from './user.entity';
 import { AccountInfo } from './user.model';
 import { md5, randomValue } from '~/utils';
 import { RoleEntity } from '../role/role.entity';
-
+import { AccountUpdateDto } from '~/modules/auth/dto/account.dto';
 @Injectable()
 export class UserService {
   constructor(
@@ -54,36 +54,37 @@ export class UserService {
    * Get user information
    * @param uid user id
    */
-  // async getAccountInfo(uid: number): Promise<AccountInfo> {
-  //   const user: UserEntity = await this.userRepository
-  //     .createQueryBuilder('user')
-  //     .leftJoinAndSelect('user.roles', 'role')
-  //     .where(`user.id = :uid`, { uid })
-  //     .getOne();
+  async getAccountInfo(uid: number): Promise<AccountInfo> {
+    const user: UserEntity = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.roles', 'role')
+      .where(`user.id = :uid`, { uid })
+      .getOne();
 
-  //   if (isEmpty(user)) throw new BusinessException(ErrorEnum.USER_NOT_FOUND);
+    if (isEmpty(user)) throw new BusinessException(ErrorEnum.USER_NOT_FOUND);
 
-  //   return user;
-  // }
+    delete user?.psalt;
+    return user;
+  }
 
   /**
    * Update personal information
    */
 
-  // async updateAccountInfo(uid: number, info: AccountUpdateDto): Promise<void> {
-  //   const user = await this.userRepository.findOneBy({ id: uid });
-  //   if (isEmpty(user)) throw new BusinessException(ErrorEnum.USER_NOT_FOUND);
+  async updateAccountInfo(uid: number, info: AccountUpdateDto): Promise<void> {
+    const user = await this.userRepository.findOneBy({ id: uid });
+    if (isEmpty(user)) throw new BusinessException(ErrorEnum.USER_NOT_FOUND);
 
-  //   const data = {
-  //     ...(info.nickname ? { nickname: info.nickname } : null),
-  //     ...(info.avatar ? { avatar: info.avatar } : null),
-  //     ...(info.email ? { email: info.email } : null),
-  //     ...(info.phone ? { phone: info.phone } : null),
-  //     ...(info.qq ? { qq: info.qq } : null),
-  //     ...(info.remark ? { remark: info.remark } : null),
-  //   };
-  //   await this.userRepository.update(uid, data);
-  // }
+    const data = {
+      ...(info.nickname ? { nickname: info.nickname } : null),
+      ...(info.avatar ? { avatar: info.avatar } : null),
+      ...(info.email ? { email: info.email } : null),
+      ...(info.phone ? { phone: info.phone } : null),
+      ...(info.qq ? { qq: info.qq } : null),
+      ...(info.remark ? { remark: info.remark } : null),
+    };
+    await this.userRepository.update(uid, data);
+  }
 
   /**
    * Change password

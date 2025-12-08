@@ -12,7 +12,4 @@ export class AccountInfo {
 
   @ApiProperty({ description: 'Phone number' })
   phone: string;
-
-  @ApiProperty({ description: 'Remark' })
-  remark: string;
 }

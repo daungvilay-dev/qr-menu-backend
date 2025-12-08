@@ -13,7 +13,7 @@ import {
 
 import { CommonEntity } from '../../../common/entity/common.entity';
 import { RoleEntity } from '../role/role.entity';
-
+import { AccessTokenEntity } from '~/modules/auth/entities/access-token.entity';
 @Entity({ name: 'sys_user' })
 export class UserEntity extends CommonEntity {
   @Column({ unique: true })
@@ -38,6 +38,11 @@ export class UserEntity extends CommonEntity {
 
   @Column({ type: 'int', nullable: true, default: 1 })
   status: number;
+
+  @OneToMany(() => AccessTokenEntity, (accessToken) => accessToken.user, {
+    cascade: true,
+  })
+  accessTokens: Relation<AccessTokenEntity[]>;
 
   @ManyToMany(() => RoleEntity, (role) => role.users)
   @JoinTable({
