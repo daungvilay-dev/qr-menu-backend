@@ -79,7 +79,7 @@ export class RoleService implements OnModuleInit {
   /**
    * Add role
    */
-  async create({ menuIds, ...data }: RoleDto): Promise<{ roleId: number }> {
+  async create({ ...data }: RoleDto): Promise<{ roleId: number }> {
     const role = await this.roleRepository.save({
       ...data,
     });
@@ -91,7 +91,7 @@ export class RoleService implements OnModuleInit {
    * Update role information
    * If the passed menuIds is empty, clear the associated data stored in the sys_role_menus table, refer to the addition
    */
-  async update(id, { menuIds, ...data }: RoleUpdateDto): Promise<void> {
+  async update(id, { ...data }: RoleUpdateDto): Promise<void> {
     await this.roleRepository.update(id, data);
     await this.entityManager.transaction(async (manager) => {
       const role = await this.roleRepository.findOne({ where: { id } });
@@ -189,9 +189,7 @@ export class RoleService implements OnModuleInit {
     });
 
     const existingValues = new Set(existing.map((role) => role.value));
-    const missing = defaults.filter(
-      (role) => !existingValues.has(role.value),
-    );
+    const missing = defaults.filter((role) => !existingValues.has(role.value));
     if (!missing.length) return;
 
     // Ensure super admin is inserted first so it keeps the expected ROOT_ROLE_ID on a fresh database.

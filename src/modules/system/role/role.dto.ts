@@ -35,11 +35,6 @@ export class RoleDto extends OperatorDto {
   @ApiProperty({ description: 'Status' })
   @IsIn([0, 1])
   status: number;
-
-  @ApiProperty({ description: 'Associated Menu, Permission IDs' })
-  @IsOptional()
-  @IsArray()
-  menuIds?: number[];
 }
 
 export class RoleUpdateDto extends PartialType(RoleDto) {}
