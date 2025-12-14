@@ -33,7 +33,7 @@ export class RegisterDto {
   @MaxLength(16)
   password: string;
 
-  @ApiProperty({ description: 'language', examples: ['EN', 'ZH'] })
+  @ApiProperty({ description: 'language', examples: ['EN'] })
   @IsString()
   lang: string;
 }
