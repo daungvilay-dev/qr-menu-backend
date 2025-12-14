@@ -41,7 +41,7 @@ export class ResourceGuard implements CanActivate {
       context.getHandler(),
     ) ?? { entity: null, condition: null };
 
-    if (entity && !user.roles.includes(Roles.ADMIN)) {
+    if (entity && !user.roles.includes(Roles.SUPER_ADMIN)) {
       const repo: Repository<any> = this.dataSource.getRepository(entity);
 
       /**

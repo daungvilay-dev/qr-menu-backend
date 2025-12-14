@@ -48,7 +48,7 @@ export class RbacGuard implements CanActivate {
     if (!payloadPermission) return true;
 
     // Admins have all permissions
-    if (user.roles.includes(Roles.ADMIN)) return true;
+    if (user.roles.includes(Roles.SUPER_ADMIN)) return true;
 
     const allPermissions = [];
     //   (await this.authService.getPermissionsCache(user.uid)) ??

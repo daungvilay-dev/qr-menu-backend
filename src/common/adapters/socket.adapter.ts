@@ -10,7 +10,6 @@ export class RedisIoAdapter extends IoAdapter {
   constructor(private readonly app: INestApplication) {
     super(app);
   }
-
   createIOServer(port: number, options?: any) {
     const server = super.createIOServer(port, options);
 
