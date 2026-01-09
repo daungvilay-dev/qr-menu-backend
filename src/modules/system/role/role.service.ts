@@ -108,9 +108,7 @@ export class RoleService implements OnModuleInit {
         users: { id },
       },
     });
-
     if (!isEmpty(roles)) return roles.map((r) => r.id);
-
     return [];
   }
 

@@ -18,7 +18,7 @@ export class LoginDto {
 export class RefreshTokenDto {
   @ApiProperty({ description: 'Refresh token' })
   @IsString()
-  refreshToken: string;
+  token: string;
 }
 
 export class RegisterDto {

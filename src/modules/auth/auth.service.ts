@@ -28,6 +28,7 @@ import { RoleService } from '../system/role/role.service';
 
 import { TokenService } from './services/token.service';
 import { AuthTokens } from './models/auth.model';
+import { UserDto } from '../system/user/dto/user.dto';
 
 @Injectable()
 export class AuthService {
@@ -62,9 +63,7 @@ export class AuthService {
    * If null is returned, the account and password are incorrect and the user does not exist
    */
   async login(username: string, password: string): Promise<AuthTokens> {
-    console.log(username);
     const user = await this.userService.findUserByUserName(username);
-    console.log('user', user);
     if (isEmpty(user))
       throw new BusinessException(ErrorEnum.INVALID_USERNAME_PASSWORD);
 
@@ -92,7 +91,14 @@ export class AuthService {
     // Set the password version number. When the password is changed, the version number is increased by 1.
     await this.redis.set(genAuthPVKey(user.id), 1);
 
-    return token;
+    delete user.password;
+    delete user.psalt;
+
+    return {
+      accessToken: token.accessToken,
+      refreshToken: token.refreshToken,
+      user: user,
+    };
   }
 
   async refresh(refreshTokenValue: string): Promise<AuthTokens> {

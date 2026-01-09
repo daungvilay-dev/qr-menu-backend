@@ -1,4 +1,12 @@
-import { Body, Controller, Headers, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiResult } from '~/common/decorators/api-result.decorator';
 import { UserService } from '~/modules/system/user/user.service';
@@ -21,20 +29,16 @@ export class AuthController {
   @Post('login')
   @ApiOperation({ summary: 'Log in' })
   @ApiResult({ type: AuthTokens })
-  async login(
-    @Body() dto: LoginDto,
-    @Headers('user-agent') ua: string,
-  ): Promise<AuthTokens> {
-    // If it is not a development environment, verify the picture verification code
+  async login(@Body() dto: LoginDto): Promise<AuthTokens> {
     const token = await this.authService.login(dto.username, dto.password);
     return token;
   }
 
-  @Post('refresh')
+  @Get('refresh')
   @ApiOperation({ summary: 'Refresh tokens' })
   @ApiResult({ type: AuthTokens })
-  async refresh(@Body() dto: RefreshTokenDto): Promise<AuthTokens> {
-    return this.authService.refresh(dto.refreshToken);
+  async refresh(@Query() q: RefreshTokenDto): Promise<AuthTokens> {
+    return this.authService.refresh(q.token);
   }
 
   @Post('register')
