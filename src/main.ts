@@ -4,7 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { setupSwagger } from './setup-swagger';
 import { ConfigService } from '@nestjs/config';
-import { RedisIoAdapter } from './common/adapters/socket.adapter';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   setupSwagger(app);
@@ -19,7 +19,6 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-  app.useWebSocketAdapter(new RedisIoAdapter(app));
   app.enableCors({ origin: '*', credentials: true });
   app.setGlobalPrefix(globalPrefix);
   await app.listen(port, '0.0.0.0');

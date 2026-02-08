@@ -8,6 +8,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { DatabaseModule } from './shared/database/database.module';
 import { SharedModule } from '~/shared/shared.module';
 import config, { AppConfig, DatabaseConfig, SecurityConfig } from '~/config';
+import { BasicModule } from './modules/basic/basic.module';
 
 const envName = process.env.NODE_ENV ?? 'development';
 const envFilePath = ['.env.local', `.env.${envName}`, '.env'];
@@ -25,6 +26,8 @@ const envFilePath = ['.env.local', `.env.${envName}`, '.env'];
     RoleModule,
     UserModule,
     AuthModule,
+
+    BasicModule,
   ],
   controllers: [AppController],
   providers: [AppService],

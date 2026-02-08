@@ -1,37 +1,33 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Headers,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiResult } from '~/common/decorators/api-result.decorator';
+import { RestaurantService } from '~/modules/basic/restaurant/restaurant.service';
 import { UserService } from '~/modules/system/user/user.service';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
-import { LoginDto, RefreshTokenDto, RegisterDto } from './dto/auth.dto';
-import { LocalGuard } from './guards/local.guard';
+import {
+  LoginDto,
+  RefreshTokenDto,
+  RegisterDto,
+  RegisterRestaurantByUserIdDto,
+} from './dto/auth.dto';
 import { AuthTokens } from './models/auth.model';
 
 @ApiTags('Auth - Authentication module')
-@UseGuards(LocalGuard)
 @Public()
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
     private userService: UserService,
+    private restaurantService: RestaurantService,
   ) {}
 
   @Post('login')
   @ApiOperation({ summary: 'Log in' })
   @ApiResult({ type: AuthTokens })
   async login(@Body() dto: LoginDto): Promise<AuthTokens> {
-    const token = await this.authService.login(dto.username, dto.password);
-    return token;
+    return await this.authService.login(dto.username, dto.password);
   }
 
   @Get('refresh')
@@ -43,7 +39,16 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'register' })
-  async register(@Body() dto: RegisterDto): Promise<void> {
-    await this.userService.register(dto);
+  async register(@Body() dto: RegisterDto): Promise<{ userId: number }> {
+    return this.userService.register(dto);
+  }
+
+  @Post('register/restaurant')
+  @ApiOperation({ summary: 'Register restaurant' })
+  async registerRestaurant(
+    @Body() dto: RegisterRestaurantByUserIdDto,
+  ): Promise<{ restaurantId: number }> {
+    const { userId, ...data } = dto;
+    return this.restaurantService.registerByOwner(userId, data);
   }
 }

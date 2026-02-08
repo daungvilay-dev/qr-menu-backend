@@ -10,6 +10,7 @@ import { isDev } from '~/global/env';
 
 import { RoleModule } from '../system/role/role.module';
 import { UserModule } from '~/modules/system/user/user.module';
+import { RestaurantModule } from '~/modules/basic/restaurant/restaurant.module';
 
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -33,7 +34,6 @@ const strategies = [LocalStrategy, JwtStrategy];
       useFactory: (configService: ConfigService<ConfigKeyPaths>) => {
         const { jwtSecret, jwtExprire } =
           configService.get<ISecurityConfig>('security');
-
         return {
           secret: jwtSecret,
           signOptions: {
@@ -46,6 +46,7 @@ const strategies = [LocalStrategy, JwtStrategy];
     }),
     UserModule,
     RoleModule,
+    RestaurantModule,
   ],
   controllers: [...controllers],
   providers: [...providers, ...strategies],

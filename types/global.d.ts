@@ -2,6 +2,7 @@ declare global {
   interface IAuthUser {
     uid: number;
     pv: number;
+    restaurantId?: number | null;
     /** Expiration time */
     exp?: number;
     /** Issued at time */

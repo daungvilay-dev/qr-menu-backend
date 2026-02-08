@@ -33,7 +33,8 @@ import { UserDto } from '../system/user/dto/user.dto';
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRedis() private readonly redis: Redis,
+    @InjectRedis()
+    private readonly redis: Redis,
     private roleService: RoleService,
     private userService: UserService,
     private tokenService: TokenService,
@@ -67,10 +68,13 @@ export class AuthService {
     if (isEmpty(user))
       throw new BusinessException(ErrorEnum.INVALID_USERNAME_PASSWORD);
 
-    const comparePassword = md5(`${password}${user.psalt}`);
-    console.log(user.password);
+    console.log(12121, password);
+    console.log(1212, user.psalt);
 
-    console.log(comparePassword);
+    const comparePassword = md5(`${password}${user.psalt}`);
+    console.log(2323,user.password);
+
+    console.log(3339,comparePassword);
     if (user.password !== comparePassword)
       throw new BusinessException(ErrorEnum.INVALID_USERNAME_PASSWORD);
 
@@ -80,6 +84,7 @@ export class AuthService {
 
     // Contains access_token and refresh_token
     const token = await this.tokenService.generateAccessToken(user.id, roles);
+    console.log(token)
 
     await this.redis.set(
       genAuthTokenKey(user.id),

@@ -16,12 +16,13 @@ import { InjectRedis } from '~/common/decorators/inject-redis.decorator';
 import { BusinessException } from '~/common/exceptions/biz.exception';
 import { AppConfig, IAppConfig, RouterWhiteList } from '~/config';
 import { ErrorEnum } from '~/common/constants/error-code.constant';
-import { genTokenBlacklistKey } from '~/helper/genRedisKey';
-
-import { AuthService } from '~/modules/auth/auth.service';
+import {
+  genAuthPVKey,
+  genAuthTokenKey,
+  genTokenBlacklistKey,
+} from '~/helper/genRedisKey';
 
 import { AuthStrategy, PUBLIC_KEY } from '../auth.constant';
-import { TokenService } from '../services/token.service';
 
 /** @type {import('fastify').RequestGenericInterface} */
 interface RequestType {
@@ -36,12 +37,11 @@ interface RequestType {
 // https://docs.nestjs.com/recipes/passport#implement-protected-route-and-jwt-strategy-guards
 @Injectable()
 export class JwtAuthGuard extends AuthGuard(AuthStrategy.JWT) {
+  // jwtFromRequestFn = function ສຳລັບດຶງ token ຈາກ header Authorization: Bearer <token>
   jwtFromRequestFn = ExtractJwt.fromAuthHeaderAsBearerToken();
 
   constructor(
     private reflector: Reflector,
-    private authService: AuthService,
-    private tokenService: TokenService,
     @InjectRedis() private readonly redis: Redis,
     @Inject(AppConfig.KEY) private appConfig: IAppConfig,
   ) {
@@ -53,19 +53,16 @@ export class JwtAuthGuard extends AuthGuard(AuthStrategy.JWT) {
       context.getHandler(),
       context.getClass(),
     ]);
+
     const request = context
       .switchToHttp()
       .getRequest<FastifyRequest<RequestType>>();
+
     // const response = context.switchToHttp().getResponse<FastifyReply>()
     const routeUrl = request.routeOptions?.url;
+
+    // ຖ້າ URL ຢູ່ໃນ RouterWhiteList = ປ່ອຍຜ່ານເລີຍ (ບໍ່ກວດ token)
     if (routeUrl && RouterWhiteList.includes(routeUrl)) return true;
-
-    const isSse = request.headers.accept === 'text/event-stream';
-
-    if (isSse && !request.headers.authorization?.startsWith('Bearer ')) {
-      const { token } = request.query;
-      if (token) request.headers.authorization = `Bearer ${token}`;
-    }
 
     const token = this.jwtFromRequestFn(request);
 
@@ -88,25 +85,9 @@ export class JwtAuthGuard extends AuthGuard(AuthStrategy.JWT) {
       if (err instanceof UnauthorizedException)
         throw new BusinessException(ErrorEnum.INVALID_LOGIN);
 
-      // Determine whether the token is valid and exists, if not, authentication fails
-      const isValid = isNil(token)
-        ? undefined
-        : await this.tokenService.checkAccessToken(token!);
-
-      if (!isValid) throw new BusinessException(ErrorEnum.INVALID_LOGIN);
+      if (!isNil(token)) throw new BusinessException(ErrorEnum.INVALID_LOGIN);
     }
-
-    // SSE request
-    if (isSse) {
-      const { uid } = request.params;
-
-      if (Number(uid) !== request.user.uid)
-        throw new UnauthorizedException(
-          'Path parameter uid does not match the uid of the currently logged-in user',
-        );
-    }
-
-    const pv = await this.authService.getPasswordVersionByUid(request.user.uid);
+    const pv = await this.redis.get(genAuthPVKey(request.user.uid));
     if (pv !== `${request.user.pv}`) {
       // Password version mismatch, password has been changed during login
       throw new BusinessException(ErrorEnum.INVALID_LOGIN);
@@ -114,7 +95,7 @@ export class JwtAuthGuard extends AuthGuard(AuthStrategy.JWT) {
 
     // Multi-device login is not allowed
     if (!this.appConfig.multiDeviceLogin) {
-      const cacheToken = await this.authService.getTokenByUid(request.user.uid);
+      const cacheToken = await this.redis.get(genAuthTokenKey(request.user.uid));
 
       if (token !== cacheToken) {
         // Inconsistent with the one saved in redis, i.e., logged in again

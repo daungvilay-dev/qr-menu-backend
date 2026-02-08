@@ -4,21 +4,18 @@ import { FastifyRequest } from 'fastify';
 
 import { BusinessException } from '~/common/exceptions/biz.exception';
 import { ErrorEnum } from '~/common/constants/error-code.constant';
-import { AuthService } from '~/modules/auth/auth.service';
 
 import {
   ALLOW_ANON_KEY,
   PERMISSION_KEY,
   PUBLIC_KEY,
+  ROLE_KEY,
   Roles,
 } from '../auth.constant';
 
 @Injectable()
 export class RbacGuard implements CanActivate {
-  constructor(
-    private reflector: Reflector,
-    private authService: AuthService,
-  ) {}
+  constructor(private reflector: Reflector) {}
 
   async canActivate(context: ExecutionContext): Promise<any> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(PUBLIC_KEY, [
@@ -39,6 +36,17 @@ export class RbacGuard implements CanActivate {
       context.getHandler(),
     );
     if (allowAnon) return true;
+
+    const payloadRoles = this.reflector.getAllAndOverride<string[]>(ROLE_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (payloadRoles?.length) {
+      const hasRole = user.roles?.some((role) => payloadRoles.includes(role));
+      if (!hasRole) throw new BusinessException(ErrorEnum.NO_PERMISSION);
+      return true;
+    }
 
     const payloadPermission = this.reflector.getAllAndOverride<
       string | string[]

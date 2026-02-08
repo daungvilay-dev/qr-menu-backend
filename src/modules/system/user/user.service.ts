@@ -298,17 +298,20 @@ export class UserService {
   /**
    * Register
    */
-  async register({ username, ...data }: RegisterDto): Promise<void> {
+  async register({
+    username,
+    ...data
+  }: RegisterDto): Promise<{ userId: number }> {
     const exists = await this.userRepository.findOneBy({
       username,
     });
     if (!isEmpty(exists))
       throw new BusinessException(ErrorEnum.SYSTEM_USER_EXISTS);
 
-    await this.entityManager.transaction(async (manager) => {
+    return this.entityManager.transaction(async (manager) => {
       const salt = randomValue(32);
 
-      const password = md5(`${data.password ?? 'a123456'}${salt}`);
+      const password = md5(`${data.password ?? 'd123456'}${salt}`);
 
       const u = manager.create(UserEntity, {
         username,
@@ -319,7 +322,7 @@ export class UserService {
 
       const user = await manager.save(u);
 
-      return user;
+      return { userId: user.id };
     });
   }
 }

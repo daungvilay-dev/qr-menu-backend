@@ -7,6 +7,7 @@ import { InjectRedis } from '~/common/decorators/inject-redis.decorator';
 
 import { ISecurityConfig, SecurityConfig } from '~/config';
 import { genOnlineUserKey } from '~/helper/genRedisKey';
+import { RestaurantService } from '~/modules/basic/restaurant/restaurant.service';
 import { RoleService } from '~/modules/system/role/role.service';
 import { UserEntity } from '~/modules/system/user/user.entity';
 import { generateUUID } from '~/utils';
@@ -23,8 +24,11 @@ export class TokenService {
   constructor(
     private jwtService: JwtService,
     private roleService: RoleService,
-    @InjectRedis() private redis: Redis,
-    @Inject(SecurityConfig.KEY) private securityConfig: ISecurityConfig,
+    private restaurantService: RestaurantService,
+    @InjectRedis()
+    private redis: Redis,
+    @Inject(SecurityConfig.KEY)
+    private securityConfig: ISecurityConfig,
   ) {}
 
   /**
@@ -73,7 +77,11 @@ export class TokenService {
 
     const refreshToken = await RefreshTokenEntity.findOne({
       where: { value: refreshTokenValue },
-      relations: ['accessToken', 'accessToken.user', 'accessToken.refreshToken'],
+      relations: [
+        'accessToken',
+        'accessToken.user',
+        'accessToken.refreshToken',
+      ],
     });
 
     if (!refreshToken || !refreshToken.accessToken) return null;
@@ -86,14 +94,16 @@ export class TokenService {
   }
 
   async generateAccessToken(uid: number, roles: string[] = []) {
+    const restaurantId = await this.restaurantService.findRestaurantIdByOwner(
+      uid,
+    );
     const payload: IAuthUser = {
       uid,
       pv: 1,
       roles,
+      restaurantId,
     };
-
     const jwtSign = await this.jwtService.signAsync(payload);
-
     // Generate access token
     const accessToken = new AccessTokenEntity();
     accessToken.value = jwtSign;
@@ -101,6 +111,7 @@ export class TokenService {
     accessToken.expired_at = dayjs()
       .add(this.securityConfig.jwtExprire, 'second')
       .toDate();
+    console.log(accessToken)
 
     await accessToken.save();
 
@@ -132,6 +143,7 @@ export class TokenService {
         secret: this.securityConfig.refreshSecret,
       },
     );
+
 
     const refreshToken = new RefreshTokenEntity();
     refreshToken.value = refreshTokenSign;

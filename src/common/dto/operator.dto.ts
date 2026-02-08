@@ -1,12 +1,17 @@
-import { ApiHideProperty } from '@nestjs/swagger'
-import { Exclude } from 'class-transformer'
+import { ApiHideProperty } from '@nestjs/swagger';
+import { Exclude } from 'class-transformer';
+import { IsInt, IsOptional } from 'class-validator';
 
 export class OperatorDto {
   @ApiHideProperty()
   @Exclude()
-  createBy: number
+  @IsOptional()
+  @IsInt()
+  createBy: number;
 
   @ApiHideProperty()
   @Exclude()
-  updateBy: number
+  @IsOptional()
+  @IsInt()
+  updateBy: number;
 }

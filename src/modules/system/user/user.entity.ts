@@ -14,6 +14,7 @@ import {
 import { CommonEntity } from '../../../common/entity/common.entity';
 import { RoleEntity } from '../role/role.entity';
 import { AccessTokenEntity } from '~/modules/auth/entities/access-token.entity';
+import { RestaurantEntity } from '~/modules/basic/restaurant/restaurant.entity';
 @Entity({ name: 'sys_user' })
 export class UserEntity extends CommonEntity {
   @Column({ unique: true })
@@ -43,6 +44,9 @@ export class UserEntity extends CommonEntity {
     cascade: true,
   })
   accessTokens: Relation<AccessTokenEntity[]>;
+
+  @OneToMany(() => RestaurantEntity, (restaurant) => restaurant.owner)
+  restaurants: Relation<RestaurantEntity[]>;
 
   @ManyToMany(() => RoleEntity, (role) => role.users)
   @JoinTable({
