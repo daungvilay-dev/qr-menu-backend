@@ -30,13 +30,13 @@ export class ItemAddonController {
     return this.itemAddonService.list(dto);
   }
 
-  @Get(':itemId/:addonId')
+  @Get(':menuId/:addonId')
   @ApiOperation({ summary: 'Get Item Addon Info' })
   async info(
-    @Param('itemId', ParseIntPipe) itemId: number,
+    @Param('menuId', ParseIntPipe) menuId: number,
     @Param('addonId', ParseIntPipe) addonId: number,
   ) {
-    return this.itemAddonService.info(itemId, addonId);
+    return this.itemAddonService.info(menuId, addonId);
   }
 
   @Post()

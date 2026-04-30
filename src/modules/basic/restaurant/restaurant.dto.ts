@@ -30,9 +30,8 @@ export class RestaurantDto extends OperatorDto {
   @MaxLength(160, { message: 'Slug length cannot exceed 160' })
   slug: string;
 
-  @ApiProperty({ description: 'Contact Email', required: false })
+  @ApiProperty({ description: 'Contact Email', required: true })
   @IsEmail()
-  @IsOptional()
   contactEmail?: string;
 
   @ApiProperty({ description: 'Phone', required: false })

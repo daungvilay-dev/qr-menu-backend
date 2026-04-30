@@ -42,38 +42,14 @@ export class RbacGuard implements CanActivate {
       context.getClass(),
     ]);
 
+    // console.log(12323, payloadRoles);
+    // console.log(user.roles);
+
     if (payloadRoles?.length) {
       const hasRole = user.roles?.some((role) => payloadRoles.includes(role));
       if (!hasRole) throw new BusinessException(ErrorEnum.NO_PERMISSION);
       return true;
     }
-
-    const payloadPermission = this.reflector.getAllAndOverride<
-      string | string[]
-    >(PERMISSION_KEY, [context.getHandler(), context.getClass()]);
-
-    // If the controller does not set interface permissions, it defaults to passing
-    if (!payloadPermission) return true;
-
-    // Admins have all permissions
-    if (user.roles.includes(Roles.SUPER_ADMIN)) return true;
-
-    const allPermissions = [];
-    //   (await this.authService.getPermissionsCache(user.uid)) ??
-    //   (await this.authService.getPermissions(user.uid));
-    // console.log(allPermissions)
-    let canNext = false;
-
-    // handle permission strings
-    if (Array.isArray(payloadPermission)) {
-      // Only one permission needs to be satisfied
-      canNext = payloadPermission.every((i) => allPermissions.includes(i));
-    }
-
-    if (typeof payloadPermission === 'string')
-      canNext = allPermissions.includes(payloadPermission);
-
-    if (!canNext) throw new BusinessException(ErrorEnum.NO_PERMISSION);
 
     return true;
   }

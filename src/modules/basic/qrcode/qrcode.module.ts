@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ItemAddonEntity } from '../item_addons/item-addon.entity';
 import { MenuCategoryEntity } from '../menu_categories/menu-category.entity';
 import { MenuEntity } from '../menus/menu.entity';
 import { RestaurantEntity } from '../restaurant/restaurant.entity';
@@ -17,6 +18,7 @@ const providers = [QrcodeService];
       RestaurantEntity,
       MenuCategoryEntity,
       MenuEntity,
+      ItemAddonEntity,
     ]),
   ],
   controllers: [QrcodeController],

@@ -9,6 +9,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 import { OperatorDto } from '~/common/dto/operator.dto';
 import { PagerDto } from '~/common/dto/pager.dto';
@@ -86,6 +87,7 @@ export class MenuQueryDto extends IntersectionType(
 
   @ApiProperty({ description: 'Category ID', required: false })
   @IsInt()
+  @Type(() => Number)
   @IsOptional()
   categoryId?: number;
 

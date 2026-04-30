@@ -6,6 +6,8 @@ import { ErrorEnum } from '~/common/constants/error-code.constant';
 import { BusinessException } from '~/common/exceptions/biz.exception';
 import { paginate } from '~/helper/paginate';
 import { Pagination } from '~/helper/paginate/pagination';
+import { AddonEntity } from '../addons/addon.entity';
+import { ItemAddonEntity } from '../item_addons/item-addon.entity';
 import { MenuCategoryEntity } from '../menu_categories/menu-category.entity';
 import { MenuEntity } from '../menus/menu.entity';
 
@@ -21,16 +23,43 @@ export class QrcodeService {
     private menuCategoryRepository: Repository<MenuCategoryEntity>,
     @InjectRepository(MenuEntity)
     private menuRepository: Repository<MenuEntity>,
+    @InjectRepository(ItemAddonEntity)
+    private itemAddonRepository: Repository<ItemAddonEntity>,
   ) {}
+
+  private async getAddonMapByMenuIds(
+    restaurantId: number,
+    menuIds: number[],
+  ): Promise<Map<number, AddonEntity[]>> {
+    if (!menuIds.length) return new Map();
+
+    const links = await this.itemAddonRepository.find({
+      where: {
+        menuId: In(menuIds),
+        addon: { restaurant: { id: restaurantId }, isActive: true },
+      },
+      relations: { addon: true },
+    });
+
+    const addonMap = new Map<number, AddonEntity[]>();
+    for (const link of links) {
+      if (!link.addon) continue;
+      const addons = addonMap.get(link.menuId) ?? [];
+      addons.push(link.addon);
+      addonMap.set(link.menuId, addons);
+    }
+
+    return addonMap;
+  }
 
   /**
    * Query QR code list
    */
   async listByRestaurant(
     restaurantId: number,
-    { page, limit, branchId, tableNumber, table_number }: QrcodeQueryDto,
+    { page, limit, branchId, tableNumber }: QrcodeQueryDto,
   ): Promise<Pagination<QrcodeEntity>> {
-    const resolvedTableNumber = tableNumber ?? table_number;
+    const resolvedTableNumber = tableNumber;
     const queryBuilder = this.qrcodeRepository
       .createQueryBuilder('qrcode')
       .leftJoinAndSelect('qrcode.restaurant', 'restaurant')
@@ -72,12 +101,12 @@ export class QrcodeService {
    */
   async createByRestaurant(
     restaurantId: number,
-    { branchId, tableNumber, table_number }: QrcodeDto,
+    { branchId, tableNumber }: QrcodeDto,
   ): Promise<{ qrcodeId: number; qrcodeUuid: string }> {
     if (!restaurantId)
       throw new BadRequestException('Restaurant ID is required');
 
-    const resolvedTableNumber = tableNumber ?? table_number;
+    const resolvedTableNumber = tableNumber;
     const qrcode = await this.qrcodeRepository.save({
       restaurant: { id: restaurantId } as any,
       ...(branchId !== undefined
@@ -95,9 +124,9 @@ export class QrcodeService {
   async updateByRestaurant(
     id: number,
     restaurantId: number,
-    { branchId, tableNumber, table_number }: QrcodeUpdateDto,
+    { branchId, tableNumber }: QrcodeUpdateDto,
   ): Promise<void> {
-    const resolvedTableNumber = tableNumber ?? table_number;
+    const resolvedTableNumber = tableNumber;
     const qrcode = await this.qrcodeRepository.findOne({
       where: { id, restaurant: { id: restaurantId } },
       relations: { restaurant: true, branch: true },
@@ -155,9 +184,6 @@ export class QrcodeService {
       .orderBy('category.sort_order', 'ASC')
       .addOrderBy('category.id', 'ASC');
 
-    // console.log(categoryQuery);
-    console.log(qrcode.branch?.id);
-
     if (qrcode.branch?.id)
       categoryQuery
         .leftJoin('category.branch', 'branch')
@@ -169,6 +195,7 @@ export class QrcodeService {
     const menuQuery = this.menuRepository
       .createQueryBuilder('menu')
       .leftJoinAndSelect('menu.category', 'category')
+      .leftJoinAndSelect('menu.variants', 'variants')
       .leftJoin('menu.restaurant', 'restaurant')
       .where('restaurant.id = :restaurantId', { restaurantId })
       .andWhere('menu.is_available = :isAvailable', { isAvailable: true })
@@ -177,18 +204,24 @@ export class QrcodeService {
 
     if (categoryIds.length)
       menuQuery.andWhere('category.id IN (:...categoryIds)', { categoryIds });
-    else menuQuery.andWhere('1 = 0');
 
     const menus = await menuQuery.getMany();
+    const addonMap = await this.getAddonMapByMenuIds(
+      restaurantId,
+      menus.map((menu) => menu.id),
+    );
 
-    // console.log(menus);
-
-    const menuMap = new Map<number, MenuEntity[]>();
+    const menuMap = new Map<
+      number,
+      Array<MenuEntity & { addons?: AddonEntity[] }>
+    >();
     menus.forEach((menu) => {
       const categoryId = menu.category?.id;
       if (!categoryId) return;
+      const menuWithAddons = menu as MenuEntity & { addons?: AddonEntity[] };
+      menuWithAddons.addons = addonMap.get(menu.id) ?? [];
       const items = menuMap.get(categoryId) ?? [];
-      items.push(menu);
+      items.push(menuWithAddons);
       menuMap.set(categoryId, items);
     });
 

@@ -63,9 +63,12 @@ export class BrancheService {
     if (!restaurantId)
       throw new BadRequestException('Restaurant ID is required');
 
+    console.log({
+      ...data,
+      restaurant: { id: restaurantId } as any,
+    });
     const branche = await this.brancheRepository.save({
       ...data,
-      restaurantId,
       restaurant: { id: restaurantId } as any,
     });
 

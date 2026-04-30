@@ -1,13 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isNil } from 'lodash';
-import { Like, Repository } from 'typeorm';
+import { In, Like, Repository } from 'typeorm';
 
 import { ErrorEnum } from '~/common/constants/error-code.constant';
 import { BusinessException } from '~/common/exceptions/biz.exception';
 import { paginate } from '~/helper/paginate';
 import { Pagination } from '~/helper/paginate/pagination';
+import { ItemAddonEntity } from '../item_addons/item-addon.entity';
 import { MenuCategoryEntity } from '../menu_categories/menu-category.entity';
+import { AddonEntity } from '../addons/addon.entity';
 
 import { MenuDto, MenuQueryDto, MenuUpdateDto } from './menu.dto';
 import { MenuEntity } from './menu.entity';
@@ -19,7 +21,34 @@ export class MenuService {
     private menuRepository: Repository<MenuEntity>,
     @InjectRepository(MenuCategoryEntity)
     private menuCategoryRepository: Repository<MenuCategoryEntity>,
+    @InjectRepository(ItemAddonEntity)
+    private itemAddonRepository: Repository<ItemAddonEntity>,
   ) {}
+
+  private async getAddonMapByMenuIds(
+    restaurantId: number,
+    menuIds: number[],
+  ): Promise<Map<number, AddonEntity[]>> {
+    if (!menuIds.length) return new Map();
+
+    const links = await this.itemAddonRepository.find({
+      where: {
+        menuId: In(menuIds),
+        addon: { restaurant: { id: restaurantId } },
+      },
+      relations: { addon: true },
+    });
+
+    const addonMap = new Map<number, AddonEntity[]>();
+    for (const link of links) {
+      if (!link.addon) continue;
+      const addons = addonMap.get(link.menuId) ?? [];
+      addons.push(link.addon);
+      addonMap.set(link.menuId, addons);
+    }
+
+    return addonMap;
+  }
 
   /**
    * Query menu list
@@ -33,16 +62,33 @@ export class MenuService {
       .leftJoin('menu.restaurant', 'restaurant')
       .where('restaurant.id = :restaurantId', { restaurantId });
 
+    console.log('catetory');
     if (categoryId)
       queryBuilder.andWhere('menu.category_id = :categoryId', { categoryId });
-    if (name) queryBuilder.andWhere('menu.name LIKE :name', { name: `%${name}%` });
+    if (name)
+      queryBuilder.andWhere('menu.name LIKE :name', { name: `%${name}%` });
     if (!isNil(isAvailable))
-      queryBuilder.andWhere('menu.is_available = :isAvailable', { isAvailable });
+      queryBuilder.andWhere('menu.is_available = :isAvailable', {
+        isAvailable,
+      });
 
-    return paginate<MenuEntity>(queryBuilder, {
+    const data = await paginate<MenuEntity>(queryBuilder, {
       page,
       limit,
     });
+
+    const addonMap = await this.getAddonMapByMenuIds(
+      restaurantId,
+      data.items.map((menu) => menu.id),
+    );
+
+    for (const menu of data.items as Array<
+      MenuEntity & { addons?: AddonEntity[] }
+    >) {
+      menu.addons = addonMap.get(menu.id) ?? [];
+    }
+
+    return data;
   }
 
   /**
@@ -51,12 +97,17 @@ export class MenuService {
   async info(id: number, restaurantId: number) {
     const info = await this.menuRepository.findOne({
       where: { id, restaurant: { id: restaurantId } },
-      relations: { restaurant: true, category: true },
+      relations: { restaurant: true, category: true, variants: true },
     });
     if (!info)
       throw new BusinessException(ErrorEnum.REQUESTED_RESOURCE_NOT_FOUND);
 
-    return { ...info };
+    const addonMap = await this.getAddonMapByMenuIds(restaurantId, [id]);
+
+    return {
+      ...info,
+      addons: addonMap.get(id) ?? [],
+    };
   }
 
   /**
@@ -64,7 +115,18 @@ export class MenuService {
    */
   async create(
     restaurantId: number,
-    { categoryId, name, img, description, price, currency, isAvailable, spicyLevel, isVeg, sortOrder }: MenuDto,
+    {
+      categoryId,
+      name,
+      img,
+      description,
+      price,
+      currency,
+      isAvailable,
+      spicyLevel,
+      isVeg,
+      sortOrder,
+    }: MenuDto,
   ): Promise<{ menuId: number }> {
     const category = await this.menuCategoryRepository.findOne({
       where: { id: categoryId, restaurant: { id: restaurantId } },
@@ -95,7 +157,18 @@ export class MenuService {
   async update(
     id: number,
     restaurantId: number,
-    { categoryId, name, img, description, price, currency, isAvailable, spicyLevel, isVeg, sortOrder }: MenuUpdateDto,
+    {
+      categoryId,
+      name,
+      img,
+      description,
+      price,
+      currency,
+      isAvailable,
+      spicyLevel,
+      isVeg,
+      sortOrder,
+    }: MenuUpdateDto,
   ): Promise<void> {
     if (categoryId) {
       const category = await this.menuCategoryRepository.findOne({

@@ -20,15 +20,6 @@ export class QrcodeDto extends OperatorDto {
   @IsOptional()
   @MaxLength(40, { message: 'Table number length cannot exceed 40' })
   tableNumber?: string;
-
-  @ApiProperty({
-    description: 'Table Number (snake_case alias)',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  @MaxLength(40, { message: 'Table number length cannot exceed 40' })
-  table_number?: string;
 }
 
 export class QrcodeUpdateDto extends PartialType(QrcodeDto) {}

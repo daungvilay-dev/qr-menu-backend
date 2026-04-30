@@ -7,6 +7,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 import { OperatorDto } from '~/common/dto/operator.dto';
 import { PagerDto } from '~/common/dto/pager.dto';
@@ -49,6 +50,12 @@ export class AddonQueryDto extends IntersectionType(
   PagerDto<AddonDto>,
   PartialType(AddonDto),
 ) {
+  @ApiProperty({ description: 'Menu ID', required: false })
+  @IsInt()
+  @Type(() => Number)
+  @IsOptional()
+  menuId?: number;
+
   @ApiProperty({ description: 'Restaurant ID', required: false })
   @IsInt()
   @IsOptional()

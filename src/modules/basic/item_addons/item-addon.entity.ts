@@ -10,16 +10,17 @@ import {
 
 import { AddonEntity } from '../addons/addon.entity';
 import { MenuEntity } from '../menus/menu.entity';
+import { CommonEntity } from '~/common/entity/common.entity';
 
 @Entity({ name: 'item_addons' })
-@Index(['itemId', 'addonId'], { unique: true })
+@Index(['menuId', 'addonId'], { unique: true })
 export class ItemAddonEntity {
-  @PrimaryColumn({ name: 'item_id', type: 'int' })
+  @PrimaryColumn({ name: 'menu_id', type: 'int' })
   @ApiProperty({ description: 'Menu Item ID' })
-  itemId: number;
+  menuId: number;
 
   @ManyToOne(() => MenuEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'item_id' })
+  @JoinColumn({ name: 'menu_id' })
   menu?: MenuEntity;
 
   @PrimaryColumn({ name: 'addon_id', type: 'int' })

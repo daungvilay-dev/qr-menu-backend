@@ -25,13 +25,13 @@ export class ItemAddonService {
   async list({
     page,
     limit,
-    itemId,
+    menuId,
     addonId,
   }: ItemAddonQueryDto): Promise<Pagination<ItemAddonEntity>> {
     const queryBuilder = this.itemAddonRepository
       .createQueryBuilder('itemAddon')
       .where({
-        ...(itemId ? { itemId } : null),
+        ...(menuId ? { menuId } : null),
         ...(addonId ? { addonId } : null),
       });
 
@@ -44,9 +44,13 @@ export class ItemAddonService {
   /**
    * Get item addon information by IDs
    */
-  async info(itemId: number, addonId: number) {
+  async info(menuId: number, addonId: number) {
     const info = await this.itemAddonRepository.findOne({
-      where: { itemId, addonId },
+      where: { menuId, addonId },
+      relations: {
+        menu: true,
+        addon: true,
+      },
     });
 
     return { ...info };
@@ -56,6 +60,7 @@ export class ItemAddonService {
    * Add item addon
    */
   async create({ ...data }: ItemAddonDto): Promise<void> {
+    console.log(data);
     await this.itemAddonRepository.save({
       ...data,
     });
@@ -65,17 +70,17 @@ export class ItemAddonService {
    * Update item addon information
    */
   async update(
-    itemId: number,
+    menuId: number,
     addonId: number,
     { ...data }: ItemAddonUpdateDto,
   ): Promise<void> {
-    await this.itemAddonRepository.update({ itemId, addonId }, data);
+    await this.itemAddonRepository.update({ menuId, addonId }, data);
   }
 
   /**
    * Delete item addon
    */
-  async delete(itemId: number, addonId: number): Promise<void> {
-    await this.itemAddonRepository.delete({ itemId, addonId });
+  async delete(menuId: number, addonId: number): Promise<void> {
+    await this.itemAddonRepository.delete({ menuId, addonId });
   }
 }

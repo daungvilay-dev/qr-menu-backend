@@ -18,7 +18,7 @@ export class QrcodeEntity extends CommonEntity {
 
   @ManyToOne(() => BrancheEntity, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'branch_id' })
-  branch?: BrancheEntity | null;
+  branch?: BrancheEntity;
 
   @Column({ name: 'table_number', length: 40, nullable: true })
   @ApiProperty({ description: 'Table Number', required: false })
@@ -30,5 +30,5 @@ export class QrcodeEntity extends CommonEntity {
 
   @Column({ name: 'last_scanned_at', type: 'timestamptz', nullable: true })
   @ApiProperty({ description: 'Last Scanned At', required: false })
-  lastScannedAt?: Date | null;
+  lastScannedAt?: Date;
 }

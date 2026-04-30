@@ -7,7 +7,7 @@ import { PagerDto } from '~/common/dto/pager.dto';
 export class ItemAddonDto extends OperatorDto {
   @ApiProperty({ description: 'Menu Item ID' })
   @IsInt()
-  itemId: number;
+  menuId: number;
 
   @ApiProperty({ description: 'Addon ID' })
   @IsInt()
@@ -23,7 +23,7 @@ export class ItemAddonQueryDto extends IntersectionType(
   @ApiProperty({ description: 'Menu Item ID', required: false })
   @IsInt()
   @IsOptional()
-  itemId?: number;
+  menuId?: number;
 
   @ApiProperty({ description: 'Addon ID', required: false })
   @IsInt()

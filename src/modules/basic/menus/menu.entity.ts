@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { CommonEntity } from '~/common/entity/common.entity';
 import { MenuCategoryEntity } from '../menu_categories/menu-category.entity';
 import { RestaurantEntity } from '../restaurant/restaurant.entity';
-
+import { VariantEntity } from '../variants/variant.entity';
 @Entity({ name: 'menus' })
 export class MenuEntity extends CommonEntity {
   @ManyToOne(() => RestaurantEntity, { onDelete: 'CASCADE' })
@@ -14,6 +14,9 @@ export class MenuEntity extends CommonEntity {
   @ManyToOne(() => MenuCategoryEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'category_id' })
   category?: MenuCategoryEntity;
+
+  @OneToMany(() => VariantEntity, (variant) => variant.menu)
+  variants?: VariantEntity[];
 
   @Column({ length: 150 })
   @ApiProperty({ description: 'Menu Name' })

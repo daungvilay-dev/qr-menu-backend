@@ -23,22 +23,22 @@ export class AddonService {
    */
   async listByRestaurant(
     restaurantId: number,
-    {
-    page,
-    limit,
-    name,
-    isActive,
-    }: AddonQueryDto,
+    { page, limit, menuId, name, isActive }: AddonQueryDto,
   ): Promise<Pagination<AddonEntity>> {
     const queryBuilder = this.addonRepository
       .createQueryBuilder('addon')
-      .leftJoinAndSelect('addon.restaurant', 'restaurant')
-      .leftJoinAndSelect('restaurant.owner', 'owner')
+      .leftJoin('addon.restaurant', 'restaurant')
+      .leftJoin('restaurant.owner', 'owner')
       .where({
         ...(name ? { name: Like(`%${name}%`) } : null),
         ...(!isNil(isActive) ? { isActive } : null),
       });
     queryBuilder.andWhere('restaurant.id = :restaurantId', { restaurantId });
+    if (menuId) {
+      queryBuilder
+        .innerJoin('item_addons', 'itemAddon', 'itemAddon.addon_id = addon.id')
+        .andWhere('itemAddon.item_id = :menuId', { menuId });
+    }
 
     return paginate<AddonEntity>(queryBuilder, {
       page,
