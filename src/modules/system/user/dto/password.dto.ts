@@ -29,8 +29,8 @@ export class UserPasswordDto {
   id: number;
 
   @ApiProperty({ description: 'Updated Password' })
-  @Matches(/^\S*(?=\S{6})(?=\S*\d)(?=\S*[A-Z])\S*$/i, {
-    message: 'Password format is incorrect',
+  @Matches(/^.{8,}$/, {
+    message: 'Password must be at least 8 characters long',
   })
   password: string;
 }

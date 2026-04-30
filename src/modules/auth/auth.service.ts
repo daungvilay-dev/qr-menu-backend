@@ -67,14 +67,7 @@ export class AuthService {
     const user = await this.userService.findUserByUserName(username);
     if (isEmpty(user))
       throw new BusinessException(ErrorEnum.INVALID_USERNAME_PASSWORD);
-
-    console.log(12121, password);
-    console.log(1212, user.psalt);
-
     const comparePassword = md5(`${password}${user.psalt}`);
-    console.log(2323,user.password);
-
-    console.log(3339,comparePassword);
     if (user.password !== comparePassword)
       throw new BusinessException(ErrorEnum.INVALID_USERNAME_PASSWORD);
 
@@ -84,7 +77,6 @@ export class AuthService {
 
     // Contains access_token and refresh_token
     const token = await this.tokenService.generateAccessToken(user.id, roles);
-    console.log(token)
 
     await this.redis.set(
       genAuthTokenKey(user.id),
