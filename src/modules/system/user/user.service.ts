@@ -123,7 +123,13 @@ export class UserService {
    */
 
   async forceUpdatePassword(uid: number, password: string): Promise<void> {
-    const user = await this.userRepository.findOneBy({ id: uid });
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .addSelect(['user.psalt'])
+      .where({ id: uid })
+      .getOne();
+
+    if (isEmpty(user)) throw new BusinessException(ErrorEnum.USER_NOT_FOUND);
 
     const newPassword = md5(`${password}${user.psalt}`);
     await this.userRepository.update({ id: uid }, { password: newPassword });
