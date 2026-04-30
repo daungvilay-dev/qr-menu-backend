@@ -22,7 +22,7 @@ export class MenuEntity extends CommonEntity {
   @ApiProperty({ description: 'Menu Name' })
   name: string;
 
-  @Column({ length: 150, nullable: true })
+  @Column({ type: 'text', nullable: true })
   @ApiProperty({ description: 'Image', required: false })
   img?: string | null;
 

@@ -61,6 +61,18 @@ export class MenuController {
     return `/uploads/menus/${filename}`;
   }
 
+  private normalizeImageInput(
+    dto: MenuDto | MenuUpdateDto,
+    file?: UploadedImageFile,
+  ): void {
+    if (file) {
+      dto.img = this.buildImagePath(file.filename);
+      return;
+    }
+
+    if ('imageUrl' in dto && dto.imageUrl) dto.img = dto.imageUrl;
+  }
+
   private getRestaurantId(user: IAuthUser): number {
     if (!user.restaurantId)
       throw new BadRequestException('Current user has no restaurant');
@@ -123,7 +135,7 @@ export class MenuController {
     @Body() dto: MenuDto,
     @UploadedFile() file?: UploadedImageFile,
   ): Promise<{ menuId: number }> {
-    if (file) dto.img = this.buildImagePath(file.filename);
+    this.normalizeImageInput(dto, file);
     return this.menuService.create(this.getRestaurantId(user), dto);
   }
 
@@ -158,7 +170,7 @@ export class MenuController {
     @Body() dto: MenuUpdateDto,
     @UploadedFile() file?: UploadedImageFile,
   ): Promise<void> {
-    if (file) dto.img = this.buildImagePath(file.filename);
+    this.normalizeImageInput(dto, file);
     await this.menuService.update(id, this.getRestaurantId(user), dto);
   }
 

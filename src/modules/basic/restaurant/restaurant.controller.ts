@@ -17,11 +17,11 @@ import { randomUUID } from 'crypto';
 import { existsSync, mkdirSync } from 'fs';
 import { extname, join } from 'path';
 import { IdParam } from '~/common/decorators/id-param.decorator';
+import { AuthUser } from '~/modules/auth/decorators/auth-user.decorator';
 import { Roles } from '~/modules/auth/auth.constant';
 import { RoleAccess } from '~/modules/auth/decorators/permission.decorator';
 import { JwtAuthGuard } from '~/modules/auth/guards/jwt-auth.guard';
 import { RbacGuard } from '~/modules/auth/guards/rbac.guard';
-import { ResourceGuard } from '~/modules/auth/guards/resource.guard';
 import {
   RestaurantDto,
   RestaurantQueryDto,
@@ -65,6 +65,22 @@ export class RestaurantController {
     return `/uploads/restaurants/${filename}`;
   }
 
+  private normalizeLogoInput(
+    dto: RestaurantDto | RestaurantUpdateDto,
+    file?: UploadedImageFile,
+  ): void {
+    if (file) {
+      dto.logo = this.buildLogoPath(file.filename);
+      return;
+    }
+
+    if ('logoUrl' in dto && dto.logoUrl) dto.logo = dto.logoUrl;
+  }
+
+  private isSuperAdmin(user: IAuthUser): boolean {
+    return user.roles?.includes(Roles.SUPER_ADMIN);
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get Restaurant List' })
   @RoleAccess([
@@ -74,8 +90,11 @@ export class RestaurantController {
     Roles.USER,
     Roles.GUEST,
   ])
-  async list(@Query() dto: RestaurantQueryDto) {
-    return this.restaurantService.list(dto);
+  async list(@AuthUser() user: IAuthUser, @Query() dto: RestaurantQueryDto) {
+    return this.restaurantService.list(
+      dto,
+      this.isSuperAdmin(user) ? undefined : user.uid,
+    );
   }
 
   @Get(':id')
@@ -87,12 +106,16 @@ export class RestaurantController {
     Roles.USER,
     Roles.GUEST,
   ])
-  async info(@IdParam() id: number) {
-    return this.restaurantService.info(id);
+  async info(@AuthUser() user: IAuthUser, @IdParam() id: number) {
+    return this.restaurantService.info(
+      id,
+      this.isSuperAdmin(user) ? undefined : user.uid,
+    );
   }
 
   @Post()
   @ApiOperation({ summary: 'Create Restaurant' })
+  @RoleAccess([Roles.SUPER_ADMIN, Roles.RESTAURANT_OWNER])
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -112,15 +135,18 @@ export class RestaurantController {
     }),
   )
   async create(
+    @AuthUser() user: IAuthUser,
     @Body() dto: RestaurantDto,
     @UploadedFile() file?: UploadedImageFile,
   ): Promise<void> {
-    if (file) dto.logo = this.buildLogoPath(file.filename);
+    this.normalizeLogoInput(dto, file);
+    if (!this.isSuperAdmin(user)) dto.ownerId = user.uid;
     await this.restaurantService.create(dto);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update Restaurant' })
+  @RoleAccess([Roles.SUPER_ADMIN, Roles.RESTAURANT_OWNER])
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -140,17 +166,26 @@ export class RestaurantController {
     }),
   )
   async update(
+    @AuthUser() user: IAuthUser,
     @IdParam() id: number,
     @Body() dto: RestaurantUpdateDto,
     @UploadedFile() file?: UploadedImageFile,
   ): Promise<void> {
-    if (file) dto.logo = this.buildLogoPath(file.filename);
-    await this.restaurantService.update(id, dto);
+    this.normalizeLogoInput(dto, file);
+    await this.restaurantService.update(
+      id,
+      dto,
+      this.isSuperAdmin(user) ? undefined : user.uid,
+    );
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Restaurant' })
-  async delete(@IdParam() id: number): Promise<void> {
-    await this.restaurantService.delete(id);
+  @RoleAccess([Roles.SUPER_ADMIN, Roles.RESTAURANT_OWNER])
+  async delete(@AuthUser() user: IAuthUser, @IdParam() id: number): Promise<void> {
+    await this.restaurantService.delete(
+      id,
+      this.isSuperAdmin(user) ? undefined : user.uid,
+    );
   }
 }

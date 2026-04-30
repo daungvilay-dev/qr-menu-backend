@@ -59,6 +59,12 @@ export class RestaurantDto extends OperatorDto {
   @IsOptional()
   logo?: string;
 
+  @ApiProperty({ description: 'Logo URL', required: false })
+  @IsString()
+  @IsOptional()
+  @MaxLength(1000, { message: 'Logo URL length cannot exceed 1000' })
+  logoUrl?: string;
+
   @ApiProperty({ description: 'Is Active', required: false })
   @Transform(toOptionalBoolean)
   @IsBoolean()

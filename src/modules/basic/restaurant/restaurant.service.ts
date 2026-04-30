@@ -41,13 +41,16 @@ export class RestaurantService {
     name,
     slug,
     isActive,
-  }: RestaurantQueryDto): Promise<Pagination<RestaurantEntity>> {
+  }: RestaurantQueryDto,
+  ownerId?: number,
+  ): Promise<Pagination<RestaurantEntity>> {
     const queryBuilder = this.restaurantRepository
       .createQueryBuilder('restaurant')
       .where({
         ...(name ? { name: Like(`%${name}%`) } : null),
         ...(slug ? { slug: Like(`%${slug}%`) } : null),
         ...(!isNil(isActive) ? { isActive } : null),
+        ...(ownerId ? { ownerId } : null),
       });
 
     return paginate<RestaurantEntity>(queryBuilder, {
@@ -59,11 +62,14 @@ export class RestaurantService {
   /**
    * Get restaurant information by ID
    */
-  async info(id: number) {
+  async info(id: number, ownerId?: number) {
     const info = await this.restaurantRepository.findOne({
-      where: { id },
+      where: { id, ...(ownerId ? { ownerId } : null) },
       relations: { owner: true, branches: true },
     });
+
+    if (!info)
+      throw new BusinessException(ErrorEnum.REQUESTED_RESOURCE_NOT_FOUND);
 
     return { ...info };
   }
@@ -146,14 +152,29 @@ export class RestaurantService {
   /**
    * Update restaurant information
    */
-  async update(id: number, { ...data }: RestaurantUpdateDto): Promise<void> {
+  async update(
+    id: number,
+    { ...data }: RestaurantUpdateDto,
+    ownerId?: number,
+  ): Promise<void> {
+    const restaurant = await this.restaurantRepository.findOne({
+      where: { id, ...(ownerId ? { ownerId } : null) },
+    });
+    if (!restaurant)
+      throw new BusinessException(ErrorEnum.REQUESTED_RESOURCE_NOT_FOUND);
+
     await this.restaurantRepository.update(id, data);
   }
 
   /**
    * Delete restaurant
    */
-  async delete(id: number): Promise<void> {
-    await this.restaurantRepository.delete(id);
+  async delete(id: number, ownerId?: number): Promise<void> {
+    const result = await this.restaurantRepository.delete({
+      id,
+      ...(ownerId ? { ownerId } : null),
+    });
+    if (!result.affected)
+      throw new BusinessException(ErrorEnum.REQUESTED_RESOURCE_NOT_FOUND);
   }
 }

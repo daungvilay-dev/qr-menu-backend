@@ -66,6 +66,19 @@ export class AuthController {
     return `/uploads/restaurants/${filename}`;
   }
 
+  private normalizeLogoInput(
+    dto: RegisterRestaurantByUserIdDto,
+    file?: UploadedImageFile,
+  ): void {
+    if (file) {
+      dto.logo = this.buildLogoPath(file.filename);
+      dto.logoUrl = dto.logo;
+      return;
+    }
+
+    if (dto.logoUrl && !dto.logo) dto.logo = dto.logoUrl;
+  }
+
   @Post('login')
   @ApiOperation({ summary: 'Log in' })
   @ApiResult({ type: AuthTokens })
@@ -110,10 +123,7 @@ export class AuthController {
     @Body() dto: RegisterRestaurantByUserIdDto,
     @UploadedFile() file?: UploadedImageFile,
   ): Promise<{ restaurantId: number }> {
-    if (file) {
-      dto.logo = this.buildLogoPath(file.filename);
-      dto.logoUrl = dto.logo;
-    }
+    this.normalizeLogoInput(dto, file);
     const { userId, ...data } = dto;
     return this.restaurantService.registerByOwner(userId, data);
   }

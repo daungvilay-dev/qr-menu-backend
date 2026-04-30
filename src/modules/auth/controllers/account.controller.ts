@@ -75,6 +75,19 @@ export class AccountController {
     return `/uploads/restaurants/${filename}`;
   }
 
+  private normalizeLogoInput(
+    dto: RegisterRestaurantDto,
+    file?: UploadedImageFile,
+  ): void {
+    if (file) {
+      dto.logo = this.buildLogoPath(file.filename);
+      dto.logoUrl = dto.logo;
+      return;
+    }
+
+    if (dto.logoUrl && !dto.logo) dto.logo = dto.logoUrl;
+  }
+
   @Get('profile')
   @ApiOperation({ summary: 'Get account information' })
   @ApiResult({ type: AccountInfo })
@@ -149,10 +162,7 @@ export class AccountController {
     @Body() dto: RegisterRestaurantDto,
     @UploadedFile() file?: UploadedImageFile,
   ): Promise<{ restaurantId: number }> {
-    if (file) {
-      dto.logo = this.buildLogoPath(file.filename);
-      dto.logoUrl = dto.logo;
-    }
+    this.normalizeLogoInput(dto, file);
     return this.restaurantService.registerByOwner(user.uid, dto);
   }
 

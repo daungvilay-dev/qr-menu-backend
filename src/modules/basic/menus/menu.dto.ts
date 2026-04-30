@@ -48,8 +48,14 @@ export class MenuDto extends OperatorDto {
   @ApiProperty({ description: 'Image', required: false })
   @IsString()
   @IsOptional()
-  @MaxLength(150, { message: 'Image length cannot exceed 150' })
+  @MaxLength(1000, { message: 'Image length cannot exceed 1000' })
   img?: string;
+
+  @ApiProperty({ description: 'Image URL', required: false })
+  @IsString()
+  @IsOptional()
+  @MaxLength(1000, { message: 'Image URL length cannot exceed 1000' })
+  imageUrl?: string;
 
   @ApiProperty({ description: 'Description', required: false })
   @IsString()
