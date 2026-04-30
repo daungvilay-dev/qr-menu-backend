@@ -4,6 +4,9 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { setupSwagger } from './setup-swagger';
 import { ConfigService } from '@nestjs/config';
+import { existsSync, mkdirSync } from 'fs';
+import { join } from 'path';
+import { static as expressStatic } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,6 +22,9 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+  const uploadsRoot = join(process.cwd(), 'uploads');
+  if (!existsSync(uploadsRoot)) mkdirSync(uploadsRoot, { recursive: true });
+  app.use('/uploads', expressStatic(uploadsRoot));
   app.enableCors({ origin: '*', credentials: true });
   app.setGlobalPrefix(globalPrefix);
   await app.listen(port, '0.0.0.0');

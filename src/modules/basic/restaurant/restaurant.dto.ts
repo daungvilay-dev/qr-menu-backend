@@ -10,9 +10,23 @@ import {
   MinLength,
   Matches,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 import { OperatorDto } from '~/common/dto/operator.dto';
 import { PagerDto } from '~/common/dto/pager.dto';
+
+const toOptionalInt = ({ value }: { value: unknown }) => {
+  if (value === undefined || value === null || value === '') return undefined;
+  return typeof value === 'number' ? value : Number.parseInt(String(value), 10);
+};
+
+const toOptionalBoolean = ({ value }: { value: unknown }) => {
+  if (value === undefined || value === null || value === '') return undefined;
+  if (typeof value === 'boolean') return value;
+  if (value === 'true' || value === '1') return true;
+  if (value === 'false' || value === '0') return false;
+  return value;
+};
 
 export class RestaurantDto extends OperatorDto {
   @ApiProperty({ description: 'Restaurant Name' })
@@ -46,11 +60,13 @@ export class RestaurantDto extends OperatorDto {
   logo?: string;
 
   @ApiProperty({ description: 'Is Active', required: false })
+  @Transform(toOptionalBoolean)
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
 
   @ApiProperty({ description: 'Owner User ID' })
+  @Transform(toOptionalInt)
   @IsInt()
   @Min(1)
   ownerId: number;

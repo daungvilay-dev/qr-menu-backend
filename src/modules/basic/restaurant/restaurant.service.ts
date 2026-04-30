@@ -92,7 +92,7 @@ export class RestaurantService {
     data: Pick<
       RestaurantDto,
       'name' | 'slug' | 'contactEmail' | 'phone' | 'logo'
-    >,
+    > & { logoUrl?: string },
   ): Promise<{ restaurantId: number }> {
     const exists = await this.restaurantRepository.findOne({
       where: { slug: data.slug },
@@ -111,6 +111,7 @@ export class RestaurantService {
 
     return this.saveRestaurant({
       ...data,
+      logo: data.logo ?? data.logoUrl,
       isActive: true,
       ownerId,
     });

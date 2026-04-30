@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 
 import {
   IsEmail,
@@ -10,6 +11,11 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+
+const toOptionalInt = ({ value }: { value: unknown }) => {
+  if (value === undefined || value === null || value === '') return undefined;
+  return typeof value === 'number' ? value : Number.parseInt(String(value), 10);
+};
 
 export class LoginDto {
   @ApiProperty({ description: 'Phone number/Email' })
@@ -76,10 +82,16 @@ export class RegisterRestaurantDto {
   @IsOptional()
   @IsString()
   logoUrl?: string;
+
+  @ApiProperty({ description: 'Logo', required: false })
+  @IsOptional()
+  @IsString()
+  logo?: string;
 }
 
 export class RegisterRestaurantByUserIdDto extends RegisterRestaurantDto {
   @ApiProperty({ description: 'Owner User ID' })
+  @Transform(toOptionalInt)
   @IsInt()
   @Min(1)
   userId: number;

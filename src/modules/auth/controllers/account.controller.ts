@@ -1,14 +1,21 @@
 import {
   Body,
+  BadRequestException,
   Controller,
   Get,
   Post,
   Put,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiExtraModels, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiConsumes, ApiExtraModels, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { randomUUID } from 'crypto';
+import { existsSync, mkdirSync } from 'fs';
+import { extname, join } from 'path';
 
 import { ApiResult } from '~/common/decorators/api-result.decorator';
 
@@ -26,6 +33,32 @@ import { AccountUpdateDto } from '../dto/account.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RestaurantService } from '~/modules/basic/restaurant/restaurant.service';
 
+const RESTAURANT_UPLOAD_DIR = join(process.cwd(), 'uploads', 'restaurants');
+const { diskStorage } = require('multer');
+
+type UploadedImageFile = {
+  filename: string;
+  mimetype: string;
+  originalname: string;
+};
+
+const ensureRestaurantUploadDir = () => {
+  if (!existsSync(RESTAURANT_UPLOAD_DIR))
+    mkdirSync(RESTAURANT_UPLOAD_DIR, { recursive: true });
+};
+
+const imageFileFilter = (
+  _req: unknown,
+  file: UploadedImageFile,
+  cb: (error: any, acceptFile: boolean) => void,
+) => {
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+    return;
+  }
+  cb(new BadRequestException('Only image files are allowed'), false);
+};
+
 @ApiTags('Account - Account Module')
 @ApiSecurityAuth()
 @ApiExtraModels(AccountInfo)
@@ -37,6 +70,10 @@ export class AccountController {
     private authService: AuthService,
     private restaurantService: RestaurantService,
   ) {}
+
+  private buildLogoPath(filename: string): string {
+    return `/uploads/restaurants/${filename}`;
+  }
 
   @Get('profile')
   @ApiOperation({ summary: 'Get account information' })
@@ -89,10 +126,33 @@ export class AccountController {
 
   @Post('restaurant/register')
   @ApiOperation({ summary: 'Register restaurant for current user' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (_req, _file, cb) => {
+          ensureRestaurantUploadDir();
+          cb(null, RESTAURANT_UPLOAD_DIR);
+        },
+        filename: (_req, file, cb) => {
+          cb(
+            null,
+            `${Date.now()}-${randomUUID().replace(/-/g, '').slice(0, 8)}${extname(file.originalname)}`,
+          );
+        },
+      }),
+      fileFilter: imageFileFilter,
+    }),
+  )
   async registerRestaurant(
     @AuthUser() user: IAuthUser,
     @Body() dto: RegisterRestaurantDto,
+    @UploadedFile() file?: UploadedImageFile,
   ): Promise<{ restaurantId: number }> {
+    if (file) {
+      dto.logo = this.buildLogoPath(file.filename);
+      dto.logoUrl = dto.logo;
+    }
     return this.restaurantService.registerByOwner(user.uid, dto);
   }
 

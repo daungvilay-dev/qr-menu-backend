@@ -9,18 +9,33 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 import { OperatorDto } from '~/common/dto/operator.dto';
 import { PagerDto } from '~/common/dto/pager.dto';
 
+const toOptionalInt = ({ value }: { value: unknown }) => {
+  if (value === undefined || value === null || value === '') return undefined;
+  return typeof value === 'number' ? value : Number.parseInt(String(value), 10);
+};
+
+const toOptionalBoolean = ({ value }: { value: unknown }) => {
+  if (value === undefined || value === null || value === '') return undefined;
+  if (typeof value === 'boolean') return value;
+  if (value === 'true' || value === '1') return true;
+  if (value === 'false' || value === '0') return false;
+  return value;
+};
+
 export class MenuDto extends OperatorDto {
   @ApiProperty({ description: 'Restaurant ID', required: false })
+  @Transform(toOptionalInt)
   @IsInt()
   @IsOptional()
   restaurantId?: number;
 
   @ApiProperty({ description: 'Category ID' })
+  @Transform(toOptionalInt)
   @IsInt()
   categoryId: number;
 
@@ -42,6 +57,7 @@ export class MenuDto extends OperatorDto {
   description?: string;
 
   @ApiProperty({ description: 'Price (minor units)' })
+  @Transform(toOptionalInt)
   @IsInt()
   @Min(0)
   price: number;
@@ -52,11 +68,13 @@ export class MenuDto extends OperatorDto {
   currency?: string;
 
   @ApiProperty({ description: 'Is Available', required: false })
+  @Transform(toOptionalBoolean)
   @IsBoolean()
   @IsOptional()
   isAvailable?: boolean;
 
   @ApiProperty({ description: 'Spicy Level (0-3)', required: false })
+  @Transform(toOptionalInt)
   @IsInt()
   @Min(0)
   @Max(3)
@@ -64,11 +82,13 @@ export class MenuDto extends OperatorDto {
   spicyLevel?: number;
 
   @ApiProperty({ description: 'Is Vegetarian', required: false })
+  @Transform(toOptionalBoolean)
   @IsBoolean()
   @IsOptional()
   isVeg?: boolean;
 
   @ApiProperty({ description: 'Sort Order', required: false })
+  @Transform(toOptionalInt)
   @IsInt()
   @IsOptional()
   sortOrder?: number;
